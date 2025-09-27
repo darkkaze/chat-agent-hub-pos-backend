@@ -7,8 +7,8 @@ from api import pos_customers, pos_products, pos_sales
 app = FastAPI(
     title="Agent Hub POS API",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    docs_url="/pos/api/docs",
+    redoc_url="/pos/api/redoc"
 )
 
 # CORS middleware for development
@@ -29,12 +29,12 @@ else:
         allow_headers=["*"],
     )
 
-app.include_router(pos_customers.router)
-app.include_router(pos_products.router)
-app.include_router(pos_sales.router)
+app.include_router(pos_customers.router, prefix="/pos/api")
+app.include_router(pos_products.router, prefix="/pos/api")
+app.include_router(pos_sales.router, prefix="/pos/api")
 
 
-@app.get("/")
+@app.get("/pos/api/health")
 async def root():
     """API health check."""
     return {"message": "Agent Hub POS API is running"}

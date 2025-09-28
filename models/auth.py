@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from .helper import id_generator
 
 if TYPE_CHECKING:
-    from .channels import ChannelAgent, ChatAgent
+    pass  # No additional imports needed for POS system
 
 # NOTA: Las tablas de autenticación (User, Agent, Token, etc.) ya existen en la
 # base de datos PostgreSQL del sistema principal. Este archivo define los modelos
@@ -48,7 +48,6 @@ class Agent(SQLModel, table=True):
 
     # Relationships
     token_agents: List["TokenAgent"] = Relationship(back_populates="agent")
-    chat_agents: List["ChatAgent"] = Relationship(back_populates="agent")
 
 
 class Token(SQLModel, table=True):

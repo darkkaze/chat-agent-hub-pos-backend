@@ -20,6 +20,27 @@ class PaymentMethod(str, Enum):
     LOYALTY_POINTS = "loyalty_points"
 
 
+class Staff(SQLModel, table=True):
+    """Modelo para personal del punto de venta."""
+    id: str = Field(default_factory=id_generator('staff', 10), primary_key=True)
+    name: str = Field(index=True)
+    schedule: str = Field(default="{}")  # JSON string for schedule/shifts
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    sales: List["Sale"] = Relationship(back_populates="staff")
+
+    def get_schedule(self) -> dict:
+        """Parse schedule JSON string to Python dict."""
+        return json.loads(self.schedule) if self.schedule else {}
+
+    def set_schedule(self, schedule: dict):
+        """Set schedule from Python dict to JSON string."""
+        self.schedule = json.dumps(schedule)
+
+
 class Customer(SQLModel, table=True):
     """Modelo para clientes del punto de venta. No incluye vectores embedding ya que no requiere análisis semántico."""
     id: str = Field(default_factory=id_generator('customer', 10), primary_key=True)
@@ -50,6 +71,7 @@ class Sale(SQLModel, table=True):
     """Modelo para ventas del POS. embedding_vector: Vector generado automáticamente al crear usando contenido de items para análisis de patrones de compra y recomendaciones. Se llena automáticamente usando OpenAI embeddings."""
     id: str = Field(default_factory=id_generator('sale', 10), primary_key=True)
     customer_id: str = Field(foreign_key="customer.id", index=True)
+    staff_id: str = Field(foreign_key="staff.id", index=True)
     items: str = Field()  # JSON string of items array
     subtotal: Decimal
     discount_amount: Decimal = Field(default=Decimal("0.00"))
@@ -62,6 +84,7 @@ class Sale(SQLModel, table=True):
 
     # Relationships
     customer: Optional[Customer] = Relationship(back_populates="sales")
+    staff: Optional[Staff] = Relationship(back_populates="sales")
 
     def get_items(self) -> List[dict]:
         """Parse items JSON string to Python list."""

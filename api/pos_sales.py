@@ -3,9 +3,9 @@ from sqlmodel import Session, select
 from sqlalchemy.orm import joinedload
 from database import get_session
 from models.auth import Token
-from models.pos_models import Sale, Customer
+from models.pos_models import Sale, Customer, Staff
 from .schemas.pos_schemas import (
-    SaleRequest, SaleResponse, SaleListResponse, CustomerResponse
+    SaleRequest, SaleResponse, SaleListResponse, CustomerResponse, StaffResponse
 )
 from helpers.auth import get_auth_token, require_admin_or_agent
 from datetime import datetime, timezone
@@ -31,6 +31,14 @@ async def create_sale(
             detail="Customer not found"
         )
 
+    # Validate staff exists and is active
+    staff = db_session.get(Staff, sale_data.staff_id)
+    if not staff or not staff.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Staff member not found or inactive"
+        )
+
     # Validate payment methods sum equals total amount
     total_payments = sum(pm.amount for pm in sale_data.payment_methods)
     if abs(total_payments - sale_data.total_amount) > Decimal('0.01'):
@@ -50,6 +58,7 @@ async def create_sale(
         # Create sale
         new_sale = Sale(
             customer_id=sale_data.customer_id,
+            staff_id=sale_data.staff_id,
             subtotal=sale_data.subtotal,
             discount_amount=sale_data.discount_amount,
             total_amount=sale_data.total_amount,
@@ -79,6 +88,7 @@ async def create_sale(
         return SaleResponse(
             id=new_sale.id,
             customer_id=new_sale.customer_id,
+            staff_id=new_sale.staff_id,
             customer=CustomerResponse(
                 id=customer.id,
                 phone=customer.phone,
@@ -87,6 +97,14 @@ async def create_sale(
                 is_active=customer.is_active,
                 created_at=customer.created_at,
                 updated_at=customer.updated_at
+            ),
+            staff=StaffResponse(
+                id=staff.id,
+                name=staff.name,
+                schedule=staff.schedule,
+                is_active=staff.is_active,
+                created_at=staff.created_at,
+                updated_at=staff.updated_at
             ),
             items=new_sale.get_items(),
             subtotal=new_sale.subtotal,

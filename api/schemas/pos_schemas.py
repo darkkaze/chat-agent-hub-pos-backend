@@ -5,6 +5,28 @@ from decimal import Decimal
 from models.pos_models import PaymentMethod
 
 
+# Staff Schemas
+class StaffRequest(BaseModel):
+    """Schema for creating/updating staff."""
+    name: str = Field(..., description="Staff member name")
+    schedule: Optional[str] = Field(default="{}", description="Staff schedule as JSON string")
+
+
+class StaffResponse(BaseModel):
+    """Schema for staff response."""
+    id: str = Field(..., description="Staff ID")
+    name: str = Field(..., description="Staff member name")
+    schedule: str = Field(..., description="Staff schedule as JSON string")
+    is_active: bool = Field(..., description="Staff active status")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
+
+
+class StaffListResponse(BaseModel):
+    """Schema for staff list response."""
+    staff: List[StaffResponse] = Field(..., description="List of staff members")
+
+
 # Customer Schemas
 class CustomerRequest(BaseModel):
     """Schema for creating/updating customer."""
@@ -102,6 +124,7 @@ class PaymentMethodItem(BaseModel):
 class SaleRequest(BaseModel):
     """Schema for creating sale."""
     customer_id: str = Field(..., description="Customer ID")
+    staff_id: str = Field(..., description="Staff ID")
     items: List[SaleItem] = Field(..., description="Sale items")
     subtotal: Decimal = Field(..., description="Subtotal before discounts")
     discount_amount: Decimal = Field(default=Decimal("0.00"), description="Total discount amount")
@@ -123,7 +146,9 @@ class SaleResponse(BaseModel):
     """Schema for sale response."""
     id: str = Field(..., description="Sale ID")
     customer_id: str = Field(..., description="Customer ID")
+    staff_id: str = Field(..., description="Staff ID")
     customer: Optional[CustomerResponse] = Field(default=None, description="Customer information")
+    staff: Optional[StaffResponse] = Field(default=None, description="Staff information")
     items: List[SaleItem] = Field(..., description="Sale items")
     subtotal: Decimal = Field(..., description="Subtotal before discounts")
     discount_amount: Decimal = Field(..., description="Total discount amount")

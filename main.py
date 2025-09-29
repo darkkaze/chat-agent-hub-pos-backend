@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine
-from api import pos_customers, pos_products, pos_sales
+from api import pos_customers, pos_products, pos_sales, pos_staff
 
 app = FastAPI(
     title="Agent Hub POS API",
@@ -32,6 +32,7 @@ else:
 app.include_router(pos_customers.router, prefix="/pos/api")
 app.include_router(pos_products.router, prefix="/pos/api")
 app.include_router(pos_sales.router, prefix="/pos/api")
+app.include_router(pos_staff.router, prefix="/pos/api")
 
 
 @app.get("/pos/api/health")

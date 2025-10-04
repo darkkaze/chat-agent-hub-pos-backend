@@ -48,9 +48,6 @@ async def create_sale(
         )
 
     try:
-        # Start transaction
-        db_session.begin()
-
         # Generate embedding for sale analysis
         items_text = " ".join([f"{item.name} {item.description}" for item in sale_data.items])
         embedding_vector = await generate_embedding(items_text)

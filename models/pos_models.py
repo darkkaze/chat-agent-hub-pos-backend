@@ -64,19 +64,19 @@ class Product(SQLModel, table=True):
     price: Decimal
     variable_price: bool = Field(default=False)  # If true, price is editable in cart
     category: Optional[str] = Field(default=None)  # Product category
-    metadata: str = Field(default="{}")  # JSON string for flexible data (e.g., duration_minutes)
+    meta_data: str = Field(default="{}")  # JSON string for flexible data (e.g., duration_minutes)
     is_active: bool = Field(default=True)
     embedding_vector: Optional[str] = Field(default=None)  # JSON string of vector array
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def get_metadata(self) -> dict:
-        """Parse metadata JSON string to Python dict."""
-        return json.loads(self.metadata) if self.metadata else {}
+    def get_meta_data(self) -> dict:
+        """Parse meta_data JSON string to Python dict."""
+        return json.loads(self.meta_data) if self.meta_data else {}
 
-    def set_metadata(self, metadata: dict):
-        """Set metadata from Python dict to JSON string."""
-        self.metadata = json.dumps(metadata)
+    def set_meta_data(self, meta_data: dict):
+        """Set meta_data from Python dict to JSON string."""
+        self.meta_data = json.dumps(meta_data)
 
 
 class Sale(SQLModel, table=True):

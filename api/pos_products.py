@@ -28,7 +28,11 @@ async def list_products(
             id=product.id,
             name=product.name,
             description=product.description,
+            details=product.details,
             price=product.price,
+            variable_price=product.variable_price,
+            category=product.category,
+            meta_data=product.meta_data,
             is_active=product.is_active,
             created_at=product.created_at,
             updated_at=product.updated_at
@@ -64,7 +68,11 @@ async def search_products(
             id=product.id,
             name=product.name,
             description=product.description,
+            details=product.details,
             price=product.price,
+            variable_price=product.variable_price,
+            category=product.category,
+            meta_data=product.meta_data,
             is_active=product.is_active,
             created_at=product.created_at,
             updated_at=product.updated_at
@@ -91,7 +99,11 @@ async def create_product(
     new_product = Product(
         name=product_data.name,
         description=product_data.description,
+        details=product_data.details,
         price=product_data.price,
+        variable_price=product_data.variable_price or False,
+        category=product_data.category,
+        meta_data=product_data.meta_data or "{}",
         is_active=True,
         embedding_vector=None,  # Vector search disabled for now
         created_at=datetime.now(timezone.utc),
@@ -106,7 +118,11 @@ async def create_product(
         id=new_product.id,
         name=new_product.name,
         description=new_product.description,
+        details=new_product.details,
         price=new_product.price,
+        variable_price=new_product.variable_price,
+        category=new_product.category,
+        meta_data=new_product.meta_data,
         is_active=new_product.is_active,
         created_at=new_product.created_at,
         updated_at=new_product.updated_at
@@ -131,9 +147,21 @@ async def update_product(
         )
 
     # Update product data
-    product.name = product_data.name
-    product.description = product_data.description
-    product.price = product_data.price
+    if product_data.name is not None:
+        product.name = product_data.name
+    if product_data.description is not None:
+        product.description = product_data.description
+    if product_data.details is not None:
+        product.details = product_data.details
+    if product_data.price is not None:
+        product.price = product_data.price
+    if product_data.variable_price is not None:
+        product.variable_price = product_data.variable_price
+    if product_data.category is not None:
+        product.category = product_data.category
+    if product_data.meta_data is not None:
+        product.meta_data = product_data.meta_data
+
     product.updated_at = datetime.now(timezone.utc)
 
     # TODO: Regenerate embedding when vector search is implemented
@@ -149,7 +177,11 @@ async def update_product(
         id=product.id,
         name=product.name,
         description=product.description,
+        details=product.details,
         price=product.price,
+        variable_price=product.variable_price,
+        category=product.category,
+        meta_data=product.meta_data,
         is_active=product.is_active,
         created_at=product.created_at,
         updated_at=product.updated_at

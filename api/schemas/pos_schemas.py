@@ -60,7 +60,11 @@ class ProductRequest(BaseModel):
     """Schema for creating/updating product."""
     name: str = Field(..., description="Product name")
     description: Optional[str] = Field(default=None, description="Product description")
+    details: Optional[str] = Field(default=None, description="Additional notes")
     price: Decimal = Field(..., description="Product price")
+    variable_price: Optional[bool] = Field(default=False, description="If price is editable in cart")
+    category: Optional[str] = Field(default=None, description="Product category")
+    metadata: Optional[str] = Field(default="{}", description="JSON metadata")
 
 
 class ProductResponse(BaseModel):
@@ -68,7 +72,11 @@ class ProductResponse(BaseModel):
     id: str = Field(..., description="Product ID")
     name: str = Field(..., description="Product name")
     description: Optional[str] = Field(default=None, description="Product description")
+    details: Optional[str] = Field(default=None, description="Additional notes")
     price: Decimal = Field(..., description="Product price")
+    variable_price: bool = Field(..., description="If price is editable in cart")
+    category: Optional[str] = Field(default=None, description="Product category")
+    metadata: str = Field(..., description="JSON metadata")
     is_active: bool = Field(..., description="Product active status")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")

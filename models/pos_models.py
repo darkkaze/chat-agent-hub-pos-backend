@@ -60,11 +60,23 @@ class Product(SQLModel, table=True):
     id: str = Field(default_factory=id_generator('product', 10), primary_key=True)
     name: str = Field(index=True)
     description: Optional[str] = Field(default=None)
+    details: Optional[str] = Field(default=None)  # Additional notes (e.g., "+ gel GRATIS")
     price: Decimal
+    variable_price: bool = Field(default=False)  # If true, price is editable in cart
+    category: Optional[str] = Field(default=None)  # Product category
+    metadata: str = Field(default="{}")  # JSON string for flexible data (e.g., duration_minutes)
     is_active: bool = Field(default=True)
     embedding_vector: Optional[str] = Field(default=None)  # JSON string of vector array
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def get_metadata(self) -> dict:
+        """Parse metadata JSON string to Python dict."""
+        return json.loads(self.metadata) if self.metadata else {}
+
+    def set_metadata(self, metadata: dict):
+        """Set metadata from Python dict to JSON string."""
+        self.metadata = json.dumps(metadata)
 
 
 class Sale(SQLModel, table=True):

@@ -48,9 +48,9 @@ async def create_sale(
         )
 
     try:
-        # Generate embedding for sale analysis
-        items_text = " ".join([f"{item.name} {item.description}" for item in sale_data.items])
-        embedding_vector = await generate_embedding(items_text)
+        # TODO: Generate embedding for sale analysis (requires vector search implementation)
+        # items_text = " ".join([f"{item.name} {item.description}" for item in sale_data.items])
+        # embedding_vector = await generate_embedding(items_text)
 
         # Create sale
         new_sale = Sale(
@@ -60,7 +60,7 @@ async def create_sale(
             discount_amount=sale_data.discount_amount,
             total_amount=sale_data.total_amount,
             loyalty_points_generated=sale_data.loyalty_points_generated,
-            embedding_vector=json.dumps(embedding_vector) if embedding_vector else None,
+            embedding_vector=None,  # Vector search not implemented yet
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )

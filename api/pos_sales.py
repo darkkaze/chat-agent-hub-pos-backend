@@ -11,6 +11,27 @@ from helpers.auth import get_auth_token, require_admin_or_agent
 from datetime import datetime, timezone
 from decimal import Decimal
 import json
+
+
+def serialize_for_json(obj):
+    """
+    Recursively convert Pydantic models with Decimal fields to JSON-serializable dicts.
+    Handles nested structures and converts Decimal to string.
+    """
+    if isinstance(obj, list):
+        return [serialize_for_json(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: serialize_for_json(value) for key, value in obj.items()}
+    elif isinstance(obj, Decimal):
+        return str(obj)
+    elif hasattr(obj, 'dict'):
+        # Pydantic model - recursively process
+        data = obj.dict()
+        return serialize_for_json(data)
+    else:
+        return obj
+
+
 router = APIRouter(prefix="/sales", tags=["pos_sales"])
 
 
@@ -65,9 +86,9 @@ async def create_sale(
             updated_at=datetime.now(timezone.utc)
         )
 
-        # Set JSON fields using helper methods
-        new_sale.set_items([item.dict() for item in sale_data.items])
-        new_sale.set_payment_methods([pm.dict() for pm in sale_data.payment_methods])
+        # Set JSON fields using helper methods (serialize Decimals to strings)
+        new_sale.set_items(serialize_for_json(sale_data.items))
+        new_sale.set_payment_methods(serialize_for_json(sale_data.payment_methods))
 
         db_session.add(new_sale)
         db_session.flush()  # Get sale ID

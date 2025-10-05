@@ -16,7 +16,7 @@ from sqlmodel import SQLModel, text
 from database import engine, get_session
 from settings import logger
 from models.auth import User, UserRole, Agent, Token, TokenUser, TokenAgent
-from models.pos_models import Customer, Product, Sale
+from models.pos_models import Customer, Product, Sale, Staff, SaleWebhook
 
 
 def init_db():
@@ -24,7 +24,7 @@ def init_db():
     logger.info("Creating POS-specific database tables...")
 
     # Get only POS-specific models (exclude auth models that already exist)
-    pos_models = [Customer, Product, Sale]
+    pos_models = [Customer, Product, Staff, Sale, SaleWebhook]
 
     for model in pos_models:
         model.__table__.create(engine, checkfirst=True)
@@ -64,7 +64,7 @@ def update_db():
             logger.info(f"Existing tables: {sorted(existing_tables)}")
 
             # Get only POS-specific model tables (exclude auth tables)
-            pos_models = [Customer, Product, Sale]
+            pos_models = [Customer, Product, Staff, Sale, SaleWebhook]
             pos_table_names = {model.__tablename__ for model in pos_models}
             logger.info(f"Required POS tables: {sorted(pos_table_names)}")
 

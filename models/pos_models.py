@@ -121,3 +121,22 @@ class Sale(SQLModel, table=True):
     def set_embedding_vector(self, vector: List[float]):
         """Set embedding_vector from Python list to JSON string."""
         self.embedding_vector = json.dumps(vector)
+
+
+class SaleWebhook(SQLModel, table=True):
+    """Modelo para webhooks de notificación de ventas. Se notifica a todos los webhooks activos cuando se registra una venta."""
+    id: str = Field(default_factory=id_generator('webhook', 10), primary_key=True)
+    name: str = Field(index=True)
+    url: str = Field()
+    is_active: bool = Field(default=True)
+    auth_config: str = Field(default="{}")  # JSON string: {"type": "bearer|apikey|basic", "token": "...", "header": "..."}
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def get_auth_config(self) -> dict:
+        """Parse auth_config JSON string to Python dict."""
+        return json.loads(self.auth_config) if self.auth_config else {}
+
+    def set_auth_config(self, auth_config: dict):
+        """Set auth_config from Python dict to JSON string."""
+        self.auth_config = json.dumps(auth_config)

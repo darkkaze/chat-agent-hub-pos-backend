@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlmodel import Session, select
 from sqlalchemy.orm import joinedload
 from database import get_session
@@ -8,6 +8,7 @@ from .schemas.pos_schemas import (
     SaleRequest, SaleResponse, SaleListResponse, CustomerResponse, StaffResponse
 )
 from helpers.auth import get_auth_token, require_admin_or_agent
+from helpers.webhook_notifier import notify_sale_to_webhooks
 from datetime import datetime, timezone
 from decimal import Decimal
 import json
@@ -38,6 +39,7 @@ router = APIRouter(prefix="/sales", tags=["pos_sales"])
 @router.post("/", response_model=SaleResponse)
 async def create_sale(
     sale_data: SaleRequest,
+    background_tasks: BackgroundTasks,
     token: Token = Depends(get_auth_token),
     db_session: Session = Depends(get_session)
 ):
@@ -102,6 +104,9 @@ async def create_sale(
         db_session.commit()
         db_session.refresh(new_sale)
         db_session.refresh(customer)
+
+        # Fire-and-forget webhook notifications
+        background_tasks.add_task(notify_sale_to_webhooks, new_sale, customer, staff, db_session)
 
         return SaleResponse(
             id=new_sale.id,

@@ -175,6 +175,39 @@ class SaleListResponse(BaseModel):
     page_size: int = Field(..., description="Page size")
 
 
+# Webhook Schemas
+class WebhookRequest(BaseModel):
+    """Schema for creating/updating webhook."""
+    name: str = Field(..., description="Webhook name")
+    url: str = Field(..., description="Webhook URL to call")
+    is_active: Optional[bool] = Field(default=True, description="Webhook active status")
+    auth_config: Optional[str] = Field(default="{}", description="JSON auth config")
+
+
+class WebhookResponse(BaseModel):
+    """Schema for webhook response."""
+    id: str = Field(..., description="Webhook ID")
+    name: str = Field(..., description="Webhook name")
+    url: str = Field(..., description="Webhook URL")
+    is_active: bool = Field(..., description="Webhook active status")
+    auth_config: str = Field(..., description="JSON auth config")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
+
+
+class WebhookListResponse(BaseModel):
+    """Schema for webhook list response."""
+    webhooks: List[WebhookResponse] = Field(..., description="List of webhooks")
+
+
+class WebhookTestResponse(BaseModel):
+    """Schema for webhook test response."""
+    success: bool = Field(..., description="Test success status")
+    status_code: Optional[int] = Field(default=None, description="HTTP status code")
+    response_body: Optional[str] = Field(default=None, description="Response body")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+
+
 # Message Schemas
 class MessageResponse(BaseModel):
     """Schema for API response messages."""

@@ -159,10 +159,11 @@ async def list_sales(
     total_statement = select(Sale)
     total_count = len(db_session.exec(total_statement).all())
 
-    # Get paginated sales with customer information
+    # Get paginated sales with customer and staff information
     statement = (
-        select(Sale, Customer)
+        select(Sale, Customer, Staff)
         .join(Customer, Sale.customer_id == Customer.id)
+        .join(Staff, Sale.staff_id == Staff.id)
         .order_by(Sale.created_at.desc())
         .offset(offset)
         .limit(page_size)
@@ -171,10 +172,11 @@ async def list_sales(
     results = db_session.exec(statement).all()
 
     sale_responses = []
-    for sale, customer in results:
+    for sale, customer, staff in results:
         sale_responses.append(SaleResponse(
             id=sale.id,
             customer_id=sale.customer_id,
+            staff_id=sale.staff_id,
             customer=CustomerResponse(
                 id=customer.id,
                 phone=customer.phone,
@@ -183,6 +185,14 @@ async def list_sales(
                 is_active=customer.is_active,
                 created_at=customer.created_at,
                 updated_at=customer.updated_at
+            ),
+            staff=StaffResponse(
+                id=staff.id,
+                name=staff.name,
+                schedule=staff.schedule,
+                is_active=staff.is_active,
+                created_at=staff.created_at,
+                updated_at=staff.updated_at
             ),
             items=sale.get_items(),
             subtotal=sale.subtotal,
@@ -219,10 +229,12 @@ async def get_sale(
         )
 
     customer = db_session.get(Customer, sale.customer_id)
+    staff = db_session.get(Staff, sale.staff_id)
 
     return SaleResponse(
         id=sale.id,
         customer_id=sale.customer_id,
+        staff_id=sale.staff_id,
         customer=CustomerResponse(
             id=customer.id,
             phone=customer.phone,
@@ -232,6 +244,14 @@ async def get_sale(
             created_at=customer.created_at,
             updated_at=customer.updated_at
         ) if customer else None,
+        staff=StaffResponse(
+            id=staff.id,
+            name=staff.name,
+            schedule=staff.schedule,
+            is_active=staff.is_active,
+            created_at=staff.created_at,
+            updated_at=staff.updated_at
+        ) if staff else None,
         items=sale.get_items(),
         subtotal=sale.subtotal,
         discount_amount=sale.discount_amount,

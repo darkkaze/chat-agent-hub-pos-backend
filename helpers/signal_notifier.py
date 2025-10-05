@@ -1,14 +1,14 @@
 """
-Webhook Notifier Helper
+Signal Notifier Helper
 
-Handles webhook notifications for sale events.
-Sends sale data to all active webhooks using fire-and-forget approach.
+Handles signal notifications for sale events.
+Sends sale data to all active signals using fire-and-forget approach.
 """
 
 import httpx
 import json
 from sqlmodel import Session, select
-from models.pos_models import SaleWebhook, Sale, Customer, Staff
+from models.pos_models import SaleSignal, Sale, Customer, Staff
 from decimal import Decimal
 from datetime import datetime
 import logging
@@ -16,9 +16,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def generate_sale_webhook_payload(sale: Sale, customer: Customer, staff: Staff) -> dict:
+def generate_sale_signal_payload(sale: Sale, customer: Customer, staff: Staff) -> dict:
     """
-    Generate webhook payload from sale data.
+    Generate signal payload from sale data.
 
     Returns JSON-serializable dict with complete sale information.
     """
@@ -44,7 +44,7 @@ def generate_sale_webhook_payload(sale: Sale, customer: Customer, staff: Staff) 
     }
 
 
-def apply_webhook_auth(headers: dict, auth_config: dict) -> dict:
+def apply_signal_auth(headers: dict, auth_config: dict) -> dict:
     """
     Apply authentication config to request headers.
 
@@ -77,63 +77,63 @@ def apply_webhook_auth(headers: dict, auth_config: dict) -> dict:
     return headers
 
 
-async def notify_single_webhook(webhook: SaleWebhook, payload: dict):
+async def notify_single_signal(signal: SaleSignal, payload: dict):
     """
-    Notify a single webhook with sale data.
+    Notify a single signal with sale data.
 
     Fire-and-forget: errors are logged but don't raise exceptions.
     """
     try:
         headers = {"Content-Type": "application/json"}
-        auth_config = webhook.get_auth_config()
-        headers = apply_webhook_auth(headers, auth_config)
+        auth_config = signal.get_auth_config()
+        headers = apply_signal_auth(headers, auth_config)
 
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                webhook.url,
+                signal.url,
                 json=payload,
                 headers=headers
             )
 
             if response.status_code >= 200 and response.status_code < 300:
-                logger.info(f"Webhook {webhook.name} ({webhook.id}) notified successfully: {response.status_code}")
+                logger.info(f"Signal {signal.name} ({signal.id}) notified successfully: {response.status_code}")
             else:
-                logger.warning(f"Webhook {webhook.name} ({webhook.id}) returned status {response.status_code}: {response.text[:200]}")
+                logger.warning(f"Signal {signal.name} ({signal.id}) returned status {response.status_code}: {response.text[:200]}")
 
     except httpx.TimeoutException:
-        logger.error(f"Webhook {webhook.name} ({webhook.id}) timed out")
+        logger.error(f"Signal {signal.name} ({signal.id}) timed out")
     except httpx.RequestError as e:
-        logger.error(f"Webhook {webhook.name} ({webhook.id}) request error: {str(e)}")
+        logger.error(f"Signal {signal.name} ({signal.id}) request error: {str(e)}")
     except Exception as e:
-        logger.error(f"Webhook {webhook.name} ({webhook.id}) unexpected error: {str(e)}")
+        logger.error(f"Signal {signal.name} ({signal.id}) unexpected error: {str(e)}")
 
 
-async def notify_sale_to_webhooks(sale: Sale, customer: Customer, staff: Staff, db_session: Session):
+async def notify_sale_to_signals(sale: Sale, customer: Customer, staff: Staff, db_session: Session):
     """
-    Notify all active webhooks about a new sale.
+    Notify all active signals about a new sale.
 
     This function is called via BackgroundTasks after sale creation.
-    Each webhook is notified independently - failures don't affect others.
+    Each signal is notified independently - failures don't affect others.
     """
-    # Get all active webhooks
-    statement = select(SaleWebhook).where(SaleWebhook.is_active == True)
-    webhooks = db_session.exec(statement).all()
+    # Get all active signals
+    statement = select(SaleSignal).where(SaleSignal.is_active == True)
+    signals = db_session.exec(statement).all()
 
-    if not webhooks:
-        logger.info("No active webhooks to notify")
+    if not signals:
+        logger.info("No active signals to notify")
         return
 
     # Generate payload once
-    payload = generate_sale_webhook_payload(sale, customer, staff)
+    payload = generate_sale_signal_payload(sale, customer, staff)
 
-    # Notify each webhook independently
-    for webhook in webhooks:
-        await notify_single_webhook(webhook, payload)
+    # Notify each signal independently
+    for signal in signals:
+        await notify_single_signal(signal, payload)
 
 
-async def test_webhook(webhook: SaleWebhook) -> dict:
+async def test_signal(signal: SaleSignal) -> dict:
     """
-    Test a webhook with dummy sale data.
+    Test a signal with dummy sale data.
 
     Returns dict with success status, status_code, response_body, and error.
     """
@@ -177,12 +177,12 @@ async def test_webhook(webhook: SaleWebhook) -> dict:
 
     try:
         headers = {"Content-Type": "application/json"}
-        auth_config = webhook.get_auth_config()
-        headers = apply_webhook_auth(headers, auth_config)
+        auth_config = signal.get_auth_config()
+        headers = apply_signal_auth(headers, auth_config)
 
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                webhook.url,
+                signal.url,
                 json=dummy_payload,
                 headers=headers
             )

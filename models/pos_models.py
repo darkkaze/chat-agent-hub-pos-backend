@@ -123,9 +123,9 @@ class Sale(SQLModel, table=True):
         self.embedding_vector = json.dumps(vector)
 
 
-class SaleWebhook(SQLModel, table=True):
-    """Modelo para webhooks de notificación de ventas. Se notifica a todos los webhooks activos cuando se registra una venta."""
-    id: str = Field(default_factory=id_generator('webhook', 10), primary_key=True)
+class SaleSignal(SQLModel, table=True):
+    """Modelo para signals de notificación de ventas. Se notifica a todos los signals activos cuando se registra una venta."""
+    id: str = Field(default_factory=id_generator('signal', 10), primary_key=True)
     name: str = Field(index=True)
     url: str = Field()
     is_active: bool = Field(default=True)

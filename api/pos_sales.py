@@ -8,7 +8,7 @@ from .schemas.pos_schemas import (
     SaleRequest, SaleResponse, SaleListResponse, CustomerResponse, StaffResponse
 )
 from helpers.auth import get_auth_token, require_admin_or_agent
-from helpers.webhook_notifier import notify_sale_to_webhooks
+from helpers.signal_notifier import notify_sale_to_signals
 from datetime import datetime, timezone
 from decimal import Decimal
 import json
@@ -106,7 +106,7 @@ async def create_sale(
         db_session.refresh(customer)
 
         # Fire-and-forget webhook notifications
-        background_tasks.add_task(notify_sale_to_webhooks, new_sale, customer, staff, db_session)
+        background_tasks.add_task(notify_sale_to_signals, new_sale, customer, staff, db_session)
 
         return SaleResponse(
             id=new_sale.id,

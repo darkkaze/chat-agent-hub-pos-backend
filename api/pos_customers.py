@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
 from database import get_session
 from models.auth import Token
-from models.pos_models import Customer, Sale
+from models.pos_models import Customer, Sale, Staff
 from .schemas.pos_schemas import (
     CustomerRequest, CustomerResponse, CustomerWalletRequest,
-    CustomerSearchResponse, SaleResponse, MessageResponse
+    CustomerSearchResponse, SaleResponse, MessageResponse, StaffResponse
 )
 from helpers.auth import get_auth_token, require_admin_or_agent
 from datetime import datetime, timezone
@@ -199,6 +199,20 @@ async def get_customer_sales(
 
     sale_responses = []
     for sale in sales:
+        # Get staff information if staff_id is present
+        staff_response = None
+        if sale.staff_id:
+            staff = db_session.get(Staff, sale.staff_id)
+            if staff:
+                staff_response = StaffResponse(
+                    id=staff.id,
+                    name=staff.name,
+                    schedule=staff.schedule,
+                    is_active=staff.is_active,
+                    created_at=staff.created_at,
+                    updated_at=staff.updated_at
+                )
+
         sale_responses.append(SaleResponse(
             id=sale.id,
             customer_id=sale.customer_id,
@@ -212,6 +226,7 @@ async def get_customer_sales(
                 created_at=customer.created_at,
                 updated_at=customer.updated_at
             ),
+            staff=staff_response,
             items=sale.get_items(),
             subtotal=sale.subtotal,
             discount_amount=sale.discount_amount,

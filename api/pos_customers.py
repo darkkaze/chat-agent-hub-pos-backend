@@ -170,10 +170,11 @@ async def update_customer_wallet(
 @router.get("/{customer_id}/sales", response_model=list[SaleResponse])
 async def get_customer_sales(
     customer_id: str,
+    delivered_at: str = Query(None, description="Filter by ticket delivery status: 'null' for not yet delivered, 'not-null' for delivered, or 'all' for both"),
     token: Token = Depends(get_auth_token),
     db_session: Session = Depends(get_session)
 ):
-    """Get sales history for a customer."""
+    """Get sales history for a customer with optional ticket delivery status filter."""
     await require_admin_or_agent(token, db_session)
 
     customer = db_session.get(Customer, customer_id)
@@ -183,7 +184,17 @@ async def get_customer_sales(
             detail="Customer not found"
         )
 
-    statement = select(Sale).where(Sale.customer_id == customer_id).order_by(Sale.created_at.desc())
+    # Build query with optional filter
+    statement = select(Sale).where(Sale.customer_id == customer_id)
+
+    # Apply delivered_at filter if specified
+    if delivered_at == "null":
+        statement = statement.where(Sale.delivered_at == None)
+    elif delivered_at == "not-null":
+        statement = statement.where(Sale.delivered_at != None)
+    # If delivered_at is "all" or None, no filter is applied
+
+    statement = statement.order_by(Sale.created_at.desc())
     sales = db_session.exec(statement).all()
 
     sale_responses = []
@@ -191,6 +202,7 @@ async def get_customer_sales(
         sale_responses.append(SaleResponse(
             id=sale.id,
             customer_id=sale.customer_id,
+            staff_id=sale.staff_id,
             customer=CustomerResponse(
                 id=customer.id,
                 phone=customer.phone,
@@ -206,6 +218,7 @@ async def get_customer_sales(
             total_amount=sale.total_amount,
             loyalty_points_generated=sale.loyalty_points_generated,
             payment_methods=sale.get_payment_methods(),
+            delivered_at=sale.delivered_at,
             created_at=sale.created_at,
             updated_at=sale.updated_at
         ))

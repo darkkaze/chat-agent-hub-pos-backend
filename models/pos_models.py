@@ -83,7 +83,7 @@ class Sale(SQLModel, table=True):
     """Modelo para ventas del POS. embedding_vector: Vector generado automáticamente al crear usando contenido de items para análisis de patrones de compra y recomendaciones. Se llena automáticamente usando OpenAI embeddings."""
     id: str = Field(default_factory=id_generator('sale', 10), primary_key=True)
     customer_id: str = Field(foreign_key="customer.id", index=True)
-    staff_id: str = Field(foreign_key="staff.id", index=True)
+    staff_id: Optional[str] = Field(default=None, foreign_key="staff.id", index=True)
     items: str = Field()  # JSON string of items array
     subtotal: Decimal
     discount_amount: Decimal = Field(default=Decimal("0.00"))
@@ -91,6 +91,7 @@ class Sale(SQLModel, table=True):
     loyalty_points_generated: int = Field(default=0)
     payment_methods: str = Field()  # JSON string of payment methods array
     embedding_vector: Optional[str] = Field(default=None)  # JSON string of vector array
+    delivered_at: Optional[datetime] = Field(default=None, index=True)  # Ticket delivery timestamp (when receipt was given to customer)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

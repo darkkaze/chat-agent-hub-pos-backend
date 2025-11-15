@@ -150,11 +150,16 @@ class SaleRequest(BaseModel):
         return v
 
 
+class SaleUpdateRequest(BaseModel):
+    """Schema for updating ticket delivery status."""
+    delivered_at: Optional[datetime] = Field(default=None, description="Ticket delivery timestamp (when receipt was given to customer, null if not yet delivered)")
+
+
 class SaleResponse(BaseModel):
     """Schema for sale response."""
     id: str = Field(..., description="Sale ID")
     customer_id: str = Field(..., description="Customer ID")
-    staff_id: str = Field(..., description="Staff ID")
+    staff_id: Optional[str] = Field(default=None, description="Staff ID")
     customer: Optional[CustomerResponse] = Field(default=None, description="Customer information")
     staff: Optional[StaffResponse] = Field(default=None, description="Staff information")
     items: List[SaleItem] = Field(..., description="Sale items")
@@ -163,6 +168,7 @@ class SaleResponse(BaseModel):
     total_amount: Decimal = Field(..., description="Final total amount")
     loyalty_points_generated: int = Field(..., description="Loyalty points generated")
     payment_methods: List[PaymentMethodItem] = Field(..., description="Payment methods used")
+    delivered_at: Optional[datetime] = Field(default=None, description="Ticket delivery timestamp (when receipt was given to customer, null if not yet delivered)")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 

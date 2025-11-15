@@ -5,7 +5,7 @@ from database import get_session
 from models.auth import Token
 from models.pos_models import Sale, Customer, Staff
 from .schemas.pos_schemas import (
-    SaleRequest, SaleResponse, SaleListResponse, CustomerResponse, StaffResponse
+    SaleRequest, SaleResponse, SaleListResponse, SaleUpdateRequest, CustomerResponse, StaffResponse
 )
 from helpers.auth import get_auth_token, require_admin_or_agent
 from helpers.signal_notifier import notify_sale_to_signals
@@ -135,6 +135,7 @@ async def create_sale(
             total_amount=new_sale.total_amount,
             loyalty_points_generated=new_sale.loyalty_points_generated,
             payment_methods=new_sale.get_payment_methods(),
+            delivered_at=new_sale.delivered_at,
             created_at=new_sale.created_at,
             updated_at=new_sale.updated_at
         )
@@ -205,6 +206,7 @@ async def list_sales(
             total_amount=sale.total_amount,
             loyalty_points_generated=sale.loyalty_points_generated,
             payment_methods=sale.get_payment_methods(),
+            delivered_at=sale.delivered_at,
             created_at=sale.created_at,
             updated_at=sale.updated_at
         ))
@@ -263,6 +265,68 @@ async def get_sale(
         total_amount=sale.total_amount,
         loyalty_points_generated=sale.loyalty_points_generated,
         payment_methods=sale.get_payment_methods(),
+        delivered_at=sale.delivered_at,
+        created_at=sale.created_at,
+        updated_at=sale.updated_at
+    )
+
+
+@router.patch("/{sale_id}", response_model=SaleResponse)
+async def update_sale(
+    sale_id: str,
+    sale_data: SaleUpdateRequest,
+    token: Token = Depends(get_auth_token),
+    db_session: Session = Depends(get_session)
+):
+    """Update ticket delivery status (delivered_at - when receipt was given to customer)."""
+    await require_admin_or_agent(token, db_session)
+
+    sale = db_session.get(Sale, sale_id)
+    if not sale:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sale not found"
+        )
+
+    # Update ticket delivery timestamp (when receipt was given to customer)
+    sale.delivered_at = sale_data.delivered_at
+    sale.updated_at = datetime.now(timezone.utc)
+
+    db_session.add(sale)
+    db_session.commit()
+    db_session.refresh(sale)
+
+    customer = db_session.get(Customer, sale.customer_id)
+    staff = db_session.get(Staff, sale.staff_id)
+
+    return SaleResponse(
+        id=sale.id,
+        customer_id=sale.customer_id,
+        staff_id=sale.staff_id,
+        customer=CustomerResponse(
+            id=customer.id,
+            phone=customer.phone,
+            name=customer.name,
+            loyalty_points=customer.loyalty_points,
+            is_active=customer.is_active,
+            created_at=customer.created_at,
+            updated_at=customer.updated_at
+        ) if customer else None,
+        staff=StaffResponse(
+            id=staff.id,
+            name=staff.name,
+            schedule=staff.schedule,
+            is_active=staff.is_active,
+            created_at=staff.created_at,
+            updated_at=staff.updated_at
+        ) if staff else None,
+        items=sale.get_items(),
+        subtotal=sale.subtotal,
+        discount_amount=sale.discount_amount,
+        total_amount=sale.total_amount,
+        loyalty_points_generated=sale.loyalty_points_generated,
+        payment_methods=sale.get_payment_methods(),
+        delivered_at=sale.delivered_at,
         created_at=sale.created_at,
         updated_at=sale.updated_at
     )

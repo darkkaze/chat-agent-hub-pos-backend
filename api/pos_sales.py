@@ -83,6 +83,7 @@ async def create_sale(
             discount_amount=sale_data.discount_amount,
             total_amount=sale_data.total_amount,
             loyalty_points_generated=sale_data.loyalty_points_generated,
+            tip_amount=sale_data.tip_amount,
             embedding_vector=None,  # Vector search not implemented yet
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
@@ -96,6 +97,14 @@ async def create_sale(
         db_session.flush()  # Get sale ID
 
         # Update customer loyalty points
+        # First, subtract loyalty points used as payment method
+        loyalty_points_used = Decimal('0')
+        for payment in sale_data.payment_methods:
+            if payment.method == 'loyalty_points':
+                loyalty_points_used += payment.amount
+
+        # Then add newly generated loyalty points
+        customer.loyalty_points -= loyalty_points_used
         customer.loyalty_points += Decimal(str(sale_data.loyalty_points_generated))
         customer.updated_at = datetime.now(timezone.utc)
         db_session.add(customer)
@@ -135,6 +144,7 @@ async def create_sale(
             total_amount=new_sale.total_amount,
             loyalty_points_generated=new_sale.loyalty_points_generated,
             payment_methods=new_sale.get_payment_methods(),
+            tip_amount=new_sale.tip_amount,
             delivered_at=new_sale.delivered_at,
             created_at=new_sale.created_at,
             updated_at=new_sale.updated_at
@@ -265,6 +275,7 @@ async def get_sale(
         total_amount=sale.total_amount,
         loyalty_points_generated=sale.loyalty_points_generated,
         payment_methods=sale.get_payment_methods(),
+        tip_amount=sale.tip_amount,
         delivered_at=sale.delivered_at,
         created_at=sale.created_at,
         updated_at=sale.updated_at
@@ -326,6 +337,7 @@ async def update_sale(
         total_amount=sale.total_amount,
         loyalty_points_generated=sale.loyalty_points_generated,
         payment_methods=sale.get_payment_methods(),
+        tip_amount=sale.tip_amount,
         delivered_at=sale.delivered_at,
         created_at=sale.created_at,
         updated_at=sale.updated_at

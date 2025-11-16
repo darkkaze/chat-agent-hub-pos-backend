@@ -139,6 +139,7 @@ class SaleRequest(BaseModel):
     total_amount: Decimal = Field(..., description="Final total amount")
     loyalty_points_generated: int = Field(default=0, description="Loyalty points generated")
     payment_methods: List[PaymentMethodItem] = Field(..., description="Payment methods used")
+    tip_amount: Decimal = Field(default=Decimal("0.00"), description="Tip amount (doesn't affect total or loyalty points)")
 
     @validator('payment_methods')
     def validate_payment_methods(cls, v, values):
@@ -168,6 +169,7 @@ class SaleResponse(BaseModel):
     total_amount: Decimal = Field(..., description="Final total amount")
     loyalty_points_generated: int = Field(..., description="Loyalty points generated")
     payment_methods: List[PaymentMethodItem] = Field(..., description="Payment methods used")
+    tip_amount: Decimal = Field(..., description="Tip amount (doesn't affect total or loyalty points)")
     delivered_at: Optional[datetime] = Field(default=None, description="Ticket delivery timestamp (when receipt was given to customer, null if not yet delivered)")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")

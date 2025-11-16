@@ -45,18 +45,21 @@ async def list_products(
 
 @router.get("/search", response_model=ProductSearchResponse)
 async def search_products(
-    q: str = Query(..., description="Search query for product name and description"),
+    q: str = Query(..., description="Search query for product name"),
     token: Token = Depends(get_auth_token),
     db_session: Session = Depends(get_session)
 ):
-    """Search products using full-text search on name and description."""
+    """Search products using trigram similarity search on name (case-insensitive, accent-insensitive, typo-tolerant)."""
     await require_admin_or_agent(token, db_session)
 
-    # Full-text search using LIKE on name and description
+    # Trigram similarity search on name using pg_trgm
+    # The % operator does fuzzy matching handling case, accents, and minor typos
+    from sqlalchemy import text, bindparam
     statement = select(Product).where(
-        (Product.name.like(f'%{q}%') | Product.description.like(f'%{q}%')) &
-        (Product.is_active == True)
-    ).order_by(Product.name)
+        text("product.name % :search_query AND product.is_active = true")
+    ).params(search_query=q).order_by(
+        text("similarity(product.name, :search_query) DESC")
+    ).params(search_query=q)
 
     products = db_session.exec(statement).all()
 

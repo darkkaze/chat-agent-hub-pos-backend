@@ -90,6 +90,7 @@ class Sale(SQLModel, table=True):
     total_amount: Decimal
     loyalty_points_generated: int = Field(default=0)
     payment_methods: str = Field()  # JSON string of payment methods array
+    tip_amount: Decimal = Field(default=Decimal("0.00"))  # Tip amount (doesn't affect total or loyalty points)
     embedding_vector: Optional[str] = Field(default=None)  # JSON string of vector array
     delivered_at: Optional[datetime] = Field(default=None, index=True)  # Ticket delivery timestamp (when receipt was given to customer)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

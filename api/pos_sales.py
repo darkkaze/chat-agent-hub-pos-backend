@@ -216,6 +216,7 @@ async def list_sales(
             total_amount=sale.total_amount,
             loyalty_points_generated=sale.loyalty_points_generated,
             payment_methods=sale.get_payment_methods(),
+            tip_amount=sale.tip_amount,
             delivered_at=sale.delivered_at,
             created_at=sale.created_at,
             updated_at=sale.updated_at

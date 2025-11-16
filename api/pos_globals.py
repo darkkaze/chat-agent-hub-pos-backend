@@ -14,6 +14,7 @@ router = APIRouter(prefix="/globals", tags=["pos_globals"])
 
 class POSGlobalsResponse(BaseModel):
     """POS global application configuration response."""
+    frontend_project_name: str
     loyalty_points_rate: float
 
 
@@ -21,5 +22,6 @@ class POSGlobalsResponse(BaseModel):
 async def get_pos_globals() -> POSGlobalsResponse:
     """Get POS global application configuration from environment variables."""
     return POSGlobalsResponse(
+        frontend_project_name=os.getenv("FRONTEND_PROJECT_NAME", "Agent Hub"),
         loyalty_points_rate=float(os.getenv("POS_LOYALTY_POINTS_RATE", "0.05"))
     )

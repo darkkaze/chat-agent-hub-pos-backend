@@ -57,7 +57,7 @@ class CustomerSearchResponse(BaseModel):
 
 # Product Schemas
 class ProductRequest(BaseModel):
-    """Schema for creating/updating product."""
+    """Schema for creating product."""
     name: str = Field(..., description="Product name")
     description: Optional[str] = Field(default=None, description="Product description")
     details: Optional[str] = Field(default=None, description="Additional notes")
@@ -65,6 +65,18 @@ class ProductRequest(BaseModel):
     variable_price: Optional[bool] = Field(default=False, description="If price is editable in cart")
     category: Optional[str] = Field(default=None, description="Product category")
     meta_data: Optional[str] = Field(default="{}", description="JSON metadata")
+
+
+class ProductUpdateRequest(BaseModel):
+    """Schema for updating product - all fields optional."""
+    name: Optional[str] = Field(default=None, description="Product name")
+    description: Optional[str] = Field(default=None, description="Product description")
+    details: Optional[str] = Field(default=None, description="Additional notes")
+    price: Optional[Decimal] = Field(default=None, description="Product price")
+    variable_price: Optional[bool] = Field(default=None, description="If price is editable in cart")
+    category: Optional[str] = Field(default=None, description="Product category")
+    meta_data: Optional[str] = Field(default=None, description="JSON metadata")
+    is_active: Optional[bool] = Field(default=None, description="Product active status")
 
 
 class ProductResponse(BaseModel):

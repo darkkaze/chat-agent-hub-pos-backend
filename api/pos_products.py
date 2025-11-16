@@ -4,7 +4,7 @@ from database import get_session
 from models.auth import Token
 from models.pos_models import Product
 from .schemas.pos_schemas import (
-    ProductRequest, ProductResponse, ProductSearchResponse, MessageResponse
+    ProductRequest, ProductUpdateRequest, ProductResponse, ProductSearchResponse, MessageResponse
 )
 from helpers.auth import get_auth_token, require_admin_or_agent, require_user_or_agent
 from datetime import datetime, timezone
@@ -135,7 +135,7 @@ async def create_product(
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
     product_id: str,
-    product_data: ProductRequest,
+    product_data: ProductUpdateRequest,
     token: Token = Depends(get_auth_token),
     db_session: Session = Depends(get_session)
 ):
@@ -164,6 +164,8 @@ async def update_product(
         product.category = product_data.category
     if product_data.meta_data is not None:
         product.meta_data = product_data.meta_data
+    if product_data.is_active is not None:
+        product.is_active = product_data.is_active
 
     product.updated_at = datetime.now(timezone.utc)
 

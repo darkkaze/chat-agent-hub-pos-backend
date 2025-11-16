@@ -6,7 +6,7 @@ from models.pos_models import Staff
 from .schemas.pos_schemas import (
     StaffRequest, StaffResponse, StaffListResponse, MessageResponse
 )
-from helpers.auth import get_auth_token, require_admin_or_agent
+from helpers.auth import get_auth_token, require_admin_or_agent, require_user_or_agent
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/staff", tags=["pos_staff"])
@@ -18,7 +18,7 @@ async def list_staff(
     db_session: Session = Depends(get_session)
 ):
     """List all active staff members."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     statement = select(Staff).where(Staff.is_active == True).order_by(Staff.name)
     staff_members = db_session.exec(statement).all()

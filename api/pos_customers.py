@@ -7,7 +7,7 @@ from .schemas.pos_schemas import (
     CustomerRequest, CustomerResponse, CustomerWalletRequest,
     CustomerSearchResponse, SaleResponse, MessageResponse, StaffResponse
 )
-from helpers.auth import get_auth_token, require_admin_or_agent
+from helpers.auth import get_auth_token, require_admin_or_agent, require_user_or_agent
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -21,7 +21,7 @@ async def search_customers(
     db_session: Session = Depends(get_session)
 ):
     """Search customers by phone number using LIKE pattern."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     # Search using LIKE pattern
     statement = select(Customer).where(
@@ -53,7 +53,7 @@ async def create_customer(
     db_session: Session = Depends(get_session)
 ):
     """Create new customer or return existing one if phone already exists."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     # Check if customer already exists
     existing_customer = db_session.exec(

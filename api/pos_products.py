@@ -6,7 +6,7 @@ from models.pos_models import Product
 from .schemas.pos_schemas import (
     ProductRequest, ProductResponse, ProductSearchResponse, MessageResponse
 )
-from helpers.auth import get_auth_token, require_admin_or_agent
+from helpers.auth import get_auth_token, require_admin_or_agent, require_user_or_agent
 from datetime import datetime, timezone
 import json
 router = APIRouter(prefix="/products", tags=["pos_products"])
@@ -18,7 +18,7 @@ async def list_products(
     db_session: Session = Depends(get_session)
 ):
     """List all active products."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     statement = select(Product).where(Product.is_active == True).order_by(Product.name)
     products = db_session.exec(statement).all()
@@ -50,7 +50,7 @@ async def search_products(
     db_session: Session = Depends(get_session)
 ):
     """Search products using trigram similarity search on name (case-insensitive, accent-insensitive, typo-tolerant)."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     # Trigram similarity search on name using pg_trgm
     # The % operator does fuzzy matching handling case, accents, and minor typos

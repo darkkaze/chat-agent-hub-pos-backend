@@ -7,7 +7,7 @@ from models.pos_models import Sale, Customer, Staff
 from .schemas.pos_schemas import (
     SaleRequest, SaleResponse, SaleListResponse, SaleUpdateRequest, CustomerResponse, StaffResponse
 )
-from helpers.auth import get_auth_token, require_admin_or_agent
+from helpers.auth import get_auth_token, require_admin_or_agent, require_user_or_agent
 from helpers.signal_notifier import notify_sale_to_signals
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -44,7 +44,7 @@ async def create_sale(
     db_session: Session = Depends(get_session)
 ):
     """Create new sale with transaction to update customer loyalty points."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     # Validate customer exists
     customer = db_session.get(Customer, sale_data.customer_id)
@@ -166,7 +166,7 @@ async def list_sales(
     db_session: Session = Depends(get_session)
 ):
     """List sales with pagination and customer information."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     # Calculate offset
     offset = (page - 1) * page_size
@@ -236,7 +236,7 @@ async def get_sale(
     db_session: Session = Depends(get_session)
 ):
     """Get detailed information for a specific sale."""
-    await require_admin_or_agent(token, db_session)
+    await require_user_or_agent(token, db_session)
 
     sale = db_session.get(Sale, sale_id)
     if not sale:

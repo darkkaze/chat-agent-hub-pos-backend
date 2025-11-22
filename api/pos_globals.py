@@ -16,6 +16,7 @@ class POSGlobalsResponse(BaseModel):
     """POS global application configuration response."""
     frontend_project_name: str
     loyalty_points_rate: float
+    timezone: str
 
 
 @router.get("", response_model=POSGlobalsResponse)
@@ -23,5 +24,6 @@ async def get_pos_globals() -> POSGlobalsResponse:
     """Get POS global application configuration from environment variables."""
     return POSGlobalsResponse(
         frontend_project_name=os.getenv("FRONTEND_PROJECT_NAME", "Agent Hub"),
-        loyalty_points_rate=float(os.getenv("POS_LOYALTY_POINTS_RATE", "0.05"))
+        loyalty_points_rate=float(os.getenv("POS_LOYALTY_POINTS_RATE", "0.05")),
+        timezone=os.getenv("TZ", "UTC")
     )

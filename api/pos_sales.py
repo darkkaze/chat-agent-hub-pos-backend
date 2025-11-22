@@ -4,6 +4,7 @@ from sqlalchemy.orm import joinedload
 from database import get_session
 from models.auth import Token
 from models.pos_models import Sale, Customer, Staff
+from models.helper import convert_utc_to_local
 from .schemas.pos_schemas import (
     SaleRequest, SaleResponse, SaleListResponse, SaleUpdateRequest, CustomerResponse, StaffResponse
 )
@@ -31,6 +32,45 @@ def serialize_for_json(obj):
         return serialize_for_json(data)
     else:
         return obj
+
+
+def build_sale_response(sale: Sale, customer: Customer, staff: Staff) -> SaleResponse:
+    """
+    Build SaleResponse with timezone-converted timestamps.
+    Converts UTC timestamps to local timezone for API response.
+    """
+    return SaleResponse(
+        id=sale.id,
+        customer_id=sale.customer_id,
+        staff_id=sale.staff_id,
+        customer=CustomerResponse(
+            id=customer.id,
+            phone=customer.phone,
+            name=customer.name,
+            loyalty_points=customer.loyalty_points,
+            is_active=customer.is_active,
+            created_at=convert_utc_to_local(customer.created_at),
+            updated_at=convert_utc_to_local(customer.updated_at)
+        ),
+        staff=StaffResponse(
+            id=staff.id,
+            name=staff.name,
+            schedule=staff.schedule,
+            is_active=staff.is_active,
+            created_at=convert_utc_to_local(staff.created_at),
+            updated_at=convert_utc_to_local(staff.updated_at)
+        ),
+        items=sale.get_items(),
+        subtotal=sale.subtotal,
+        discount_amount=sale.discount_amount,
+        total_amount=sale.total_amount,
+        loyalty_points_generated=sale.loyalty_points_generated,
+        payment_methods=sale.get_payment_methods(),
+        tip_amount=sale.tip_amount,
+        delivered_at=convert_utc_to_local(sale.delivered_at),
+        created_at=convert_utc_to_local(sale.created_at),
+        updated_at=convert_utc_to_local(sale.updated_at)
+    )
 
 
 router = APIRouter(prefix="/sales", tags=["pos_sales"])
@@ -117,38 +157,7 @@ async def create_sale(
         # Fire-and-forget webhook notifications
         background_tasks.add_task(notify_sale_to_signals, new_sale, customer, staff, db_session)
 
-        return SaleResponse(
-            id=new_sale.id,
-            customer_id=new_sale.customer_id,
-            staff_id=new_sale.staff_id,
-            customer=CustomerResponse(
-                id=customer.id,
-                phone=customer.phone,
-                name=customer.name,
-                loyalty_points=customer.loyalty_points,
-                is_active=customer.is_active,
-                created_at=customer.created_at,
-                updated_at=customer.updated_at
-            ),
-            staff=StaffResponse(
-                id=staff.id,
-                name=staff.name,
-                schedule=staff.schedule,
-                is_active=staff.is_active,
-                created_at=staff.created_at,
-                updated_at=staff.updated_at
-            ),
-            items=new_sale.get_items(),
-            subtotal=new_sale.subtotal,
-            discount_amount=new_sale.discount_amount,
-            total_amount=new_sale.total_amount,
-            loyalty_points_generated=new_sale.loyalty_points_generated,
-            payment_methods=new_sale.get_payment_methods(),
-            tip_amount=new_sale.tip_amount,
-            delivered_at=new_sale.delivered_at,
-            created_at=new_sale.created_at,
-            updated_at=new_sale.updated_at
-        )
+        return build_sale_response(new_sale, customer, staff)
 
     except Exception as e:
         db_session.rollback()
@@ -189,38 +198,7 @@ async def list_sales(
 
     sale_responses = []
     for sale, customer, staff in results:
-        sale_responses.append(SaleResponse(
-            id=sale.id,
-            customer_id=sale.customer_id,
-            staff_id=sale.staff_id,
-            customer=CustomerResponse(
-                id=customer.id,
-                phone=customer.phone,
-                name=customer.name,
-                loyalty_points=customer.loyalty_points,
-                is_active=customer.is_active,
-                created_at=customer.created_at,
-                updated_at=customer.updated_at
-            ),
-            staff=StaffResponse(
-                id=staff.id,
-                name=staff.name,
-                schedule=staff.schedule,
-                is_active=staff.is_active,
-                created_at=staff.created_at,
-                updated_at=staff.updated_at
-            ),
-            items=sale.get_items(),
-            subtotal=sale.subtotal,
-            discount_amount=sale.discount_amount,
-            total_amount=sale.total_amount,
-            loyalty_points_generated=sale.loyalty_points_generated,
-            payment_methods=sale.get_payment_methods(),
-            tip_amount=sale.tip_amount,
-            delivered_at=sale.delivered_at,
-            created_at=sale.created_at,
-            updated_at=sale.updated_at
-        ))
+        sale_responses.append(build_sale_response(sale, customer, staff))
 
     return SaleListResponse(
         sales=sale_responses,
@@ -249,38 +227,7 @@ async def get_sale(
     customer = db_session.get(Customer, sale.customer_id)
     staff = db_session.get(Staff, sale.staff_id)
 
-    return SaleResponse(
-        id=sale.id,
-        customer_id=sale.customer_id,
-        staff_id=sale.staff_id,
-        customer=CustomerResponse(
-            id=customer.id,
-            phone=customer.phone,
-            name=customer.name,
-            loyalty_points=customer.loyalty_points,
-            is_active=customer.is_active,
-            created_at=customer.created_at,
-            updated_at=customer.updated_at
-        ) if customer else None,
-        staff=StaffResponse(
-            id=staff.id,
-            name=staff.name,
-            schedule=staff.schedule,
-            is_active=staff.is_active,
-            created_at=staff.created_at,
-            updated_at=staff.updated_at
-        ) if staff else None,
-        items=sale.get_items(),
-        subtotal=sale.subtotal,
-        discount_amount=sale.discount_amount,
-        total_amount=sale.total_amount,
-        loyalty_points_generated=sale.loyalty_points_generated,
-        payment_methods=sale.get_payment_methods(),
-        tip_amount=sale.tip_amount,
-        delivered_at=sale.delivered_at,
-        created_at=sale.created_at,
-        updated_at=sale.updated_at
-    )
+    return build_sale_response(sale, customer, staff)
 
 
 @router.patch("/{sale_id}", response_model=SaleResponse)
@@ -311,35 +258,4 @@ async def update_sale(
     customer = db_session.get(Customer, sale.customer_id)
     staff = db_session.get(Staff, sale.staff_id)
 
-    return SaleResponse(
-        id=sale.id,
-        customer_id=sale.customer_id,
-        staff_id=sale.staff_id,
-        customer=CustomerResponse(
-            id=customer.id,
-            phone=customer.phone,
-            name=customer.name,
-            loyalty_points=customer.loyalty_points,
-            is_active=customer.is_active,
-            created_at=customer.created_at,
-            updated_at=customer.updated_at
-        ) if customer else None,
-        staff=StaffResponse(
-            id=staff.id,
-            name=staff.name,
-            schedule=staff.schedule,
-            is_active=staff.is_active,
-            created_at=staff.created_at,
-            updated_at=staff.updated_at
-        ) if staff else None,
-        items=sale.get_items(),
-        subtotal=sale.subtotal,
-        discount_amount=sale.discount_amount,
-        total_amount=sale.total_amount,
-        loyalty_points_generated=sale.loyalty_points_generated,
-        payment_methods=sale.get_payment_methods(),
-        tip_amount=sale.tip_amount,
-        delivered_at=sale.delivered_at,
-        created_at=sale.created_at,
-        updated_at=sale.updated_at
-    )
+    return build_sale_response(sale, customer, staff)

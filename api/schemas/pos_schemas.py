@@ -228,6 +228,15 @@ class SignalTestResponse(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if failed")
 
 
+# Sales Report Schemas
+class SalesReportResponse(BaseModel):
+    """Schema for sales report response."""
+    sales: List[SaleResponse] = Field(..., description="List of sales")
+    total_amount: Decimal = Field(..., description="Sum of all sale totals")
+    total_sales: int = Field(..., description="Total number of sales")
+    filters: dict = Field(..., description="Applied filters (start_date, end_date, staff_id)")
+
+
 # Message Schemas
 class MessageResponse(BaseModel):
     """Schema for API response messages."""
